@@ -1,6 +1,7 @@
 {
 	"name": "electron-app",
 	"version": "1.1.0",
+	"type": "module",
 	"description": "A minimal Electron application with TypeScript",
 	"main": "./out/main/index.js",
 	"author": "example.com",
@@ -26,7 +27,10 @@
 		"@electron-toolkit/utils": "^1.0.2",
 		"electron-serve": "^1.1.0",
 		"electron-updater": "^5.3.0",
-		"electron-window-state": "^5.0.3"
+		"electron-window-state": "^5.0.3",
+		"entities": "^6.0.0",
+		"natural": "^8.0.1",
+		"onnxruntime-node": "^1.20.1"
 	},
 	"devDependencies": {
 		"@electron-toolkit/tsconfig": "^1.0.1",
@@ -35,19 +39,20 @@
 		"@typescript-eslint/eslint-plugin": "^5.59.0",
 		"@typescript-eslint/parser": "^5.59.0",
 		"concurrently": "^8.0.1",
-		"electron": "^24.1.2",
+		"electron": "^33.4.1",
 		"electron-builder": "^23.6.0",
-		"electron-vite": "^1.0.21",
+		"electron-vite": "^3.0.0",
 		"eslint": "^8.38.0",
 		"eslint-config-prettier": "^8.8.0",
 		"eslint-plugin-prettier": "^4.2.1",
 		"prettier": "^2.8.7",
 		"typescript": "^5.0.4",
-		"vite": "^4.2.2"
+		"vite": "^6.1.1"
 	},
 	"pnpm": {
 		"overrides": {
 			"minimatch@<3.0.5": ">=3.0.5"
 		}
-	}
+	},
+	"packageManager": "pnpm@9.3.0+sha1.d4f1da7af76dbdb4ab1a08f6b5add602ffad6fd4"
 }

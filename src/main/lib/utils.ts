@@ -1,6 +1,6 @@
 import { app, ipcMain, BrowserWindow } from 'electron';
 import { sleep } from '../../shared/sharedUtils';
-import os from 'os';
+import * as os from 'os';
 
 ipcMain.on('appVersionSync', (event, arg) => {
 	console.log(arg);
