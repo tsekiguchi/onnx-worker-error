@@ -1,34 +1,28 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { sleep } from '../../../shared/sharedUtils';
+	import { writable } from "svelte/store";
 
-	// getting package.json version using safe SYNC call to main process
-	// see src/main/lib/utils.ts for implementation
-	let packageVersion = 'loading simulation with shared sleep() function in renderer';
-	onMount(async () => {
-		await sleep(2000);
-		packageVersion = window.electron.sendSync('appVersionSync', 'test arg');
-	});
+  const response = writable<string>('')
 
-	// ASYNC call. Getting user home directory
-	// see src/main/lib/utils.ts for implementation
-	let homeDir = 'loading simulation with shared sleep() function in main...';
-	onMount(() => {
-		window.electron.send('homeDirPathAsync', 'async test arg');
+	const handleWorkerClick = async () => {
+		const arrayBuffer = await window.electron.ipcRenderer.invoke('onnx-worker-test');
+    const f32 = new Float32Array(arrayBuffer)
+    response.set(f32.toString())
+	};
 
-		window.electron.receive('homeDirPathAsyncResponse', (data: any) => {
-			homeDir = data;
-		});
-	});
+	const handleNodeClick = async () => {
+		const arrayBuffer = await window.electron.ipcRenderer.invoke('onnx-node-test');
+    const f32 = new Float32Array(arrayBuffer)
+    console.log('response received', f32)
+    response.set(f32.toString())
+	};
 </script>
 
 <h1>Welcome to SvelteKit</h1>
 <p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
 
-<div>
-	Here is package version (sync) from package.json : {packageVersion}
-</div>
+<button on:click={handleWorkerClick}> Click here to run Onnx in a Worker </button>
 
-<div>
-	Here is home dir (async): {homeDir}
-</div>
+<button on:click={handleNodeClick}> Click here to run Onnx in Node </button>
+
+<p>Embeddings</p>
+<p>{$response}</p>

@@ -5,13 +5,13 @@ import icon from '../../resources/icon.png?asset';
 import serve from 'electron-serve';
 import windowStateManager from 'electron-window-state';
 import FS from 'fs';
-import './lib/utils';
 import { Worker } from 'worker_threads';
 //@ts-ignore "?modulePath" wildcard is recognized by electron-vite bundler
-import transformersWorkerPath from './transformers.worker?modulePath';
+import transformersWorkerPath from './onnx.worker?modulePath';
 import { SimpleTokenizer } from './SimpleTokenizer.js';
 import { downloadFile } from './downloadHandler.js';
 import * as ort from 'onnxruntime-node';
+import { ipcMain } from 'electron/main';
 
 const serveURL = serve({ directory: join(__dirname, '..', 'renderer') });
 
@@ -97,9 +97,6 @@ app.whenReady().then(async () => {
 
 	createWindow();
 
-	await testOnnxRuntimeWorker();
-	// await testOnnxRuntimeNode();
-
 	app.on('activate', function () {
 		// On macOS it's common to re-create a window in the app when the
 		// dock icon is clicked and there are no other windows open.
@@ -118,6 +115,19 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+ipcMain.handle('onnx-worker-test', async () => {
+	try {
+		return await testOnnxRuntimeWorker();
+	} catch (error) {
+		return { error: (error as Error).message };
+	}
+});
+
+ipcMain.handle('onnx-node-test', async () => {
+	return await testOnnxRuntimeNode();
+});
+
 const VISION_MODEL_Q8_PATH = path.join(app.getPath('userData'), 'vision_model_q8_batch.onnx');
 const TEXT_MODEL_Q8_PATH = path.join(app.getPath('userData'), 'text_model_q8_batch.onnx');
 
@@ -134,7 +144,7 @@ async function downloadModels(): Promise<void> {
 		await downloadFile(TEXT_MODEL_Q8_URL, TEXT_MODEL_Q8_PATH, 'Text Model');
 }
 
-async function testOnnxRuntimeWorker(): Promise<void> {
+async function testOnnxRuntimeWorker(): Promise<ArrayBuffer> {
 	await downloadModels();
 	const worker = new Worker(transformersWorkerPath, {
 		workerData: {
@@ -147,17 +157,21 @@ async function testOnnxRuntimeWorker(): Promise<void> {
 
 	const input = tokenizer.tokenize('A man and his dog at the beach');
 
-	await new Promise<void>((resolve) => {
+	const text_embeddings = await new Promise<BatchInferenceResponse>((resolve) => {
 		worker.postMessage({ action: 'generateTextEmbeddings', data: input });
 
 		worker.on('message', (response) => {
 			console.log('worker response', response);
-			resolve();
+			resolve(response);
 		});
 	});
+
+	const data = text_embeddings.arrayBuffer;
+
+	return data;
 }
 
-async function testOnnxRuntimeNode(): Promise<void> {
+async function testOnnxRuntimeNode(): Promise<ArrayBuffer> {
 	await downloadModels();
 
 	const textModel = await ort.InferenceSession.create(TEXT_MODEL_Q8_PATH, {
@@ -173,4 +187,8 @@ async function testOnnxRuntimeNode(): Promise<void> {
 	if (!text_embeddings) throw Error('No embedding returned from text model');
 
 	console.log('Text Embeddings', text_embeddings);
+
+	const data = (await text_embeddings.getData()) as Float32Array;
+
+	return data.buffer;
 }
