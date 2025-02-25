@@ -15,6 +15,9 @@ import { ipcMain } from 'electron/main';
 
 const serveURL = serve({ directory: join(__dirname, '..', 'renderer') });
 
+app.commandLine.appendSwitch('enable-unsafe-webgpu');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+
 export interface BatchInferenceResponse {
 	arrayBuffer: ArrayBuffer;
 	batchSize: number;
@@ -153,12 +156,8 @@ async function testOnnxRuntimeWorker(): Promise<ArrayBuffer> {
 		}
 	});
 
-	const tokenizer = new SimpleTokenizer();
-
-	const input = tokenizer.tokenize('A man and his dog at the beach');
-
 	const text_embeddings = await new Promise<BatchInferenceResponse>((resolve) => {
-		worker.postMessage({ action: 'generateTextEmbeddings', data: input });
+		worker.postMessage({ action: 'generateTextEmbeddings', data: 'A man and his dog at the beach' });
 
 		worker.on('message', (response) => {
 			console.log('worker response', response);
